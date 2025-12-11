@@ -29,3 +29,4 @@ gpt2_ak_coding_test.py
 log/
 test*
 saved_final_models/
+.env
