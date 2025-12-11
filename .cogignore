@@ -1,0 +1,25 @@
+.git
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+.env
+wandb/
+saved_final_models/
+submission media/
+jupyter notebooks/
+hellaswag eval dataset/
+*.ipynb
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.mp4
+*.mov
+*.avi
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
