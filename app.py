@@ -6,6 +6,8 @@ import streamlit as st
 from replicate_backend import call_replicate
 
 
+st.set_page_config(page_title="848K GPT-2 Chat", layout="wide")
+
 # Title of the app
 st.title("Our 848K project: GPT-2 Unveiled: Comparative Insights")
 
@@ -84,15 +86,19 @@ st.markdown(
 
 api_token_present = bool(os.getenv("REPLICATE_API_TOKEN"))
 if not api_token_present:
-    st.sidebar.error("Missing REPLICATE_API_TOKEN. Add it in Streamlit secrets or environment.")
+    st.sidebar.error("Missing API token. Add it in Streamlit secrets or environment.")
 else:
-    st.sidebar.success("Using Replicate for inference.")
+    st.sidebar.success("Backend connected.")
 
 st.markdown("### Chat")
 
 # Ensure chat history is properly initialized
 if "chat_history" not in st.session_state or not isinstance(st.session_state.chat_history, list):
     st.session_state.chat_history = []
+
+# Cold start hint
+if not st.session_state.chat_history:
+    st.info("Cold start may take up to a minute for the first response.")
 
 # Render chat transcript in a chat-style layout
 for message in st.session_state.chat_history:
@@ -107,11 +113,9 @@ if prompt and model_option and api_token_present:
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Prepare full conversation for the model
-    full_input = "\n".join(
-        ["User: " + m["content"] if m["role"] == "user" else "Assistant: " + m["content"]
-         for m in st.session_state.chat_history]
-    )
+    # Prepare concise input to reduce echoing past turns
+    instruction = "Respond concisely to the user. Do not repeat the user prompt verbatim."
+    full_input = instruction + "\nUser: " + prompt
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking on Replicate..."):
@@ -124,7 +128,7 @@ if prompt and model_option and api_token_present:
                 st.stop()
 
             st.markdown(response)
-            st.caption(f"Generated in {generation_time:.2f}s via Replicate")
+            st.caption(f"Generated in {generation_time:.2f}s")
 
     # Save assistant message separately so we don't echo the user prompt
     st.session_state.chat_history.append({"role": "assistant", "content": response})
