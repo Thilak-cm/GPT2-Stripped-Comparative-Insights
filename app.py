@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 
 import streamlit as st
 
@@ -79,6 +80,9 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Check API token (needed for cold start)
+api_token_present = bool(os.getenv("REPLICATE_API_TOKEN"))
+
 # Sidebar for model selection
 with st.sidebar:
     st.title("848K GPT-2")
@@ -100,7 +104,6 @@ with st.sidebar:
     
     st.divider()
     
-    api_token_present = bool(os.getenv("REPLICATE_API_TOKEN"))
     if not api_token_present:
         st.error("⚠️ Backend not connected")
     else:
@@ -123,6 +126,27 @@ with st.sidebar:
 if "chat_history" not in st.session_state or not isinstance(st.session_state.chat_history, list):
     st.session_state.chat_history = []
     st.session_state.first_message = True
+
+# Cold start: Warm up the model in the background when app first loads
+if "cold_start_done" not in st.session_state:
+    st.session_state.cold_start_done = False
+
+def warm_up_model(model_name: str):
+    """Background function to warm up the model with a test message."""
+    try:
+        test_prompt = "\nUser: test message"
+        call_replicate(test_prompt, model_name, max_new_tokens=10)
+    except Exception:
+        # Silently fail - this is just for warming up
+        pass
+
+# Trigger cold start once when app loads (if API token is present)
+# Note: This runs after sidebar is rendered, so model_option is available
+if not st.session_state.cold_start_done and api_token_present:
+    st.session_state.cold_start_done = True
+    # Run warm-up in background thread to avoid blocking UI
+    # Use the currently selected model (defaults to Kerple)
+    threading.Thread(target=warm_up_model, args=(model_option,), daemon=True).start()
 
 # Render chat history
 for message in st.session_state.chat_history:
