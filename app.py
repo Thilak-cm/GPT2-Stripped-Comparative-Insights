@@ -36,33 +36,9 @@ st.set_page_config(page_title="848K GPT-2 Chat", layout="wide")
 st.markdown(
     """
     <style>
-    /* Inject disclaimer banner at the top of the app */
-    .stApp > header {
-        visibility: hidden;
-    }
-    .stApp {
-        margin-top: 0 !important;
-    }
-    #disclaimer-banner {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-        background-color: #f0f2f6 !important;
-        border-bottom: 1px solid #e0e0e0 !important;
-        padding: 0.75rem 1rem !important;
-        font-size: 0.875rem !important;
-        color: #333 !important;
-        z-index: 9999 !important;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-        margin: 0 !important;
-    }
-    #disclaimer-banner strong {
-        color: #666 !important;
-    }
     .main .block-container {
-        padding-top: 5rem !important;
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
     .stChatMessage {
         padding: 1rem 0;
@@ -71,9 +47,6 @@ st.markdown(
         padding: 0.5rem 0;
     }
     </style>
-    <div id="disclaimer-banner">
-        ⚠️ <strong>Fair Warning:</strong> These models were trained on 4 A100 GPUs for 2 days, so keep your expectations... modest. Built purely for educational purposes—I get to dig deep into PyTorch implementations and learn firsthand. Functionally useless? Maybe. Incredibly valuable for learning? Absolutely.
-    </div>
     """,
     unsafe_allow_html=True
 )
@@ -119,6 +92,9 @@ with st.sidebar:
         """,
         unsafe_allow_html=True
     )
+
+# Disclaimer banner using Streamlit's native component
+st.info("⚠️ **Fair Warning:** These models were trained on 4 A100 GPUs for 2 days, so keep your expectations... modest. Built purely for educational purposes—I get to dig deep into PyTorch implementations and learn firsthand. Functionally useless? Maybe. Incredibly valuable for learning? Absolutely.")
 
 # Ensure chat history is properly initialized
 if "chat_history" not in st.session_state or not isinstance(st.session_state.chat_history, list):
