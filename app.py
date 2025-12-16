@@ -45,7 +45,36 @@ st.markdown(
     .stChatMessage [data-testid="stMarkdownContainer"] {
         padding: 0.5rem 0;
     }
+    .disclaimer-banner {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        background-color: #f0f2f6;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        color: #333;
+        z-index: 999;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .disclaimer-banner strong {
+        color: #666;
+    }
+    .main .block-container {
+        padding-top: 5rem;
+    }
     </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Fixed disclaimer banner
+st.markdown(
+    """
+    <div class="disclaimer-banner">
+        ⚠️ <strong>Fair Warning:</strong> These models were trained on 4 A100 GPUs for 2 days, so keep your expectations... modest. Built purely for educational purposes—I get to dig deep into PyTorch implementations and learn firsthand. Functionally useless? Maybe. Incredibly valuable for learning? Absolutely.
+    </div>
     """,
     unsafe_allow_html=True
 )
