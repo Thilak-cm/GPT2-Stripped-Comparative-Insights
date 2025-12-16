@@ -6,6 +6,29 @@ import streamlit as st
 from replicate_backend import call_replicate
 
 
+def filter_user_message_from_response(response: str, user_prompt: str) -> str:
+    """Remove the echoed user message from the LLM response."""
+    # Remove common patterns where the model echoes the user's message
+    patterns_to_remove = [
+        f"User: {user_prompt}",
+        f"\nUser: {user_prompt}",
+        f"User: {user_prompt}\n",
+        f"\nUser: {user_prompt}\n",
+    ]
+    
+    cleaned_response = response
+    for pattern in patterns_to_remove:
+        if cleaned_response.startswith(pattern):
+            cleaned_response = cleaned_response[len(pattern):].strip()
+            break
+    
+    # Also try to find and remove if it appears anywhere in the response
+    for pattern in patterns_to_remove:
+        cleaned_response = cleaned_response.replace(pattern, "").strip()
+    
+    return cleaned_response
+
+
 st.set_page_config(page_title="848K GPT-2 Chat", layout="wide")
 
 # Custom CSS for ChatGPT-like interface
@@ -59,7 +82,9 @@ with st.sidebar:
         """
         <div style="font-size: 0.85rem; color: #666;">
         <b>Authors:</b><br>
-        Thilak Mohan | Sumedha Vadlamani | Peeyush Dyavarashetty
+        <a href="https://thilak-cm.github.io/" target="_blank" style="color: #4F8BF9; text-decoration: none;">Thilak Mohan</a> | 
+        <a href="https://www.linkedin.com/in/sumedha-vadlamani/" target="_blank" style="color: #4F8BF9; text-decoration: none;">Sumedha Vadlamani</a> | 
+        <a href="https://www.linkedin.com/in/peeyush-dyavarashetty/" target="_blank" style="color: #4F8BF9; text-decoration: none;">Peeyush Dyavarashetty</a>
         </div>
         """,
         unsafe_allow_html=True
@@ -101,17 +126,20 @@ if prompt and model_option and api_token_present:
         with st.spinner(""):
             try:
                 start = time.time()
-                response = call_replicate(full_input, model_option, max_new_tokens=50)
+                raw_response = call_replicate(full_input, model_option, max_new_tokens=50)
                 generation_time = time.time() - start
                 
-                # Display response
+                # Filter out the user's message from the response
+                response = filter_user_message_from_response(raw_response, prompt)
+                
+                # Display cleaned response
                 message_placeholder.markdown(response)
                 
             except Exception as exc:
                 st.error(f"Failed to generate response: {exc}")
                 response = None
 
-    # Save assistant message to history
+    # Save assistant message to history (only the cleaned response)
     if response:
         st.session_state.chat_history.append({"role": "assistant", "content": response})
         
