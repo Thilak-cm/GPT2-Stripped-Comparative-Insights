@@ -8,128 +8,110 @@ from replicate_backend import call_replicate
 
 st.set_page_config(page_title="848K GPT-2 Chat", layout="wide")
 
-# Title of the app
-st.title("Our 848K project: GPT-2 Unveiled: Comparative Insights")
-
-# Sidebar for model selection
-st.sidebar.header("Select a Model")
-model_option = st.sidebar.selectbox(
-    "Choose a Positional Encoding:",
-    [
-        "Kerple",
-        "ALIBI",
-        "FIRE",
-        "Learned PE",
-        "RoPE",
-        "Sinusoidal",
-    ],
-    index=0,
-)
-
-# Add authors' names and links at the bottom
+# Custom CSS for ChatGPT-like interface
 st.markdown(
     """
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            width: 100%;
-            text-align: center;
-            padding: 12px 10px;
-            background-color: #f9f9f9;
-            font-size: 13px;
-            font-family: Arial, sans-serif;
-            color: #333333;
-            box-shadow: 0px -1px 5px rgba(0, 0, 0, 0.1);
-        }
-        .footer a {
-            text-decoration: none;
-            margin: -55px;
-            margin-left: 10px;
-            color: #4F8BF9;
-            font-weight: bold;
-        }
-        .footer i {
-            margin-right: 50px;
-        }
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    .stChatMessage {
+        padding: 1rem 0;
+    }
+    .stChatMessage [data-testid="stMarkdownContainer"] {
+        padding: 0.5rem 0;
+    }
     </style>
-    <div class="footer">
-        <b>Authors:</b> 
-        Thilak Mohan 
-        <a href="https://www.linkedin.com/in/thilak-mohan-687b801b2/" target="_blank">
-            <i class="fab fa-linkedin"></i>
-        </a>
-        <a href="https://github.com/Thilak-cm" target="_blank">
-            <i class="fab fa-github"></i>
-        </a> |
-        Sumedha Vadlamani 
-        <a href="https://www.linkedin.com/in/sumedha-vadlamani/" target="_blank">
-            <i class="fab fa-linkedin"></i>
-        </a>
-        <a href="https://github.com/sumedha-24" target="_blank">
-            <i class="fab fa-github"></i>
-        </a> |
-        Peeyush Dyavarashetty 
-        <a href="https://www.linkedin.com/in/peeyush-dyavarashetty/" target="_blank">
-            <i class="fab fa-linkedin"></i>
-        </a>
-        <a href="https://github.com/Peeyush4" target="_blank">
-            <i class="fab fa-github"></i>
-        </a>
-    </div>
     """,
     unsafe_allow_html=True
 )
 
-api_token_present = bool(os.getenv("REPLICATE_API_TOKEN"))
-if not api_token_present:
-    st.sidebar.error("Missing API token. Add it in Streamlit secrets or environment.")
-else:
-    st.sidebar.success("Backend connected.")
-
-st.markdown("### Chat")
+# Sidebar for model selection
+with st.sidebar:
+    st.title("848K GPT-2")
+    st.markdown("**GPT-2 Unveiled: Comparative Insights**")
+    st.divider()
+    
+    model_option = st.selectbox(
+        "Choose a Positional Encoding:",
+        [
+            "Kerple",
+            "ALIBI",
+            "FIRE",
+            "Learned PE",
+            "RoPE",
+            "Sinusoidal",
+        ],
+        index=0,
+    )
+    
+    st.divider()
+    
+    api_token_present = bool(os.getenv("REPLICATE_API_TOKEN"))
+    if not api_token_present:
+        st.error("⚠️ Backend not connected")
+    else:
+        st.success("✓ Backend connected")
+    
+    st.divider()
+    st.markdown(
+        """
+        <div style="font-size: 0.85rem; color: #666;">
+        <b>Authors:</b><br>
+        Thilak Mohan | Sumedha Vadlamani | Peeyush Dyavarashetty
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # Ensure chat history is properly initialized
 if "chat_history" not in st.session_state or not isinstance(st.session_state.chat_history, list):
     st.session_state.chat_history = []
+    st.session_state.first_message = True
 
-# Cold start hint
-if not st.session_state.chat_history:
-    st.info("Cold start may take up to a minute for the first response.")
-
-# Render chat transcript in a chat-style layout
+# Render chat history
 for message in st.session_state.chat_history:
-    with st.chat_message("user" if message["role"] == "user" else "assistant"):
+    with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-prompt = st.chat_input("Message Kerple (or choose another PE)...", disabled=not api_token_present)
+# Show welcome message only if no chat history
+if not st.session_state.chat_history:
+    with st.chat_message("assistant"):
+        st.markdown(f"Hello! I'm GPT-2 with **{model_option}** positional encoding. How can I help you today?")
+
+# Chat input
+prompt = st.chat_input("Message...", disabled=not api_token_present)
 
 if prompt and model_option and api_token_present:
-    # Show user message immediately
+    # Add user message to history and display it
     st.session_state.chat_history.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
+    
+    # Clear the welcome message flag
+    st.session_state.first_message = False
 
-    # Prepare concise input to reduce echoing past turns
-    instruction = "Respond concisely to the user. Do not repeat the user prompt verbatim."
-    full_input = instruction + "\nUser: " + prompt
+    # Prepare input for the model
+    full_input = "\nUser: " + prompt
 
+    # Show assistant response
     with st.chat_message("assistant"):
-        with st.spinner("Thinking on Replicate..."):
+        message_placeholder = st.empty()
+        with st.spinner(""):
             try:
                 start = time.time()
                 response = call_replicate(full_input, model_option, max_new_tokens=50)
                 generation_time = time.time() - start
+                
+                # Display response
+                message_placeholder.markdown(response)
+                
             except Exception as exc:
                 st.error(f"Failed to generate response: {exc}")
-                st.stop()
+                response = None
 
-            st.markdown(response)
-            st.caption(f"Generated in {generation_time:.2f}s")
-
-    # Save assistant message separately so we don't echo the user prompt
-    st.session_state.chat_history.append({"role": "assistant", "content": response})
+    # Save assistant message to history
+    if response:
+        st.session_state.chat_history.append({"role": "assistant", "content": response})
         
